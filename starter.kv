@@ -1,0 +1,163 @@
+#:kivy 1.8.0
+
+# XonoticSimpleStarter
+# Copyright (C) <2016>  <Sebastian Schmidt>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#:import DictAdapter kivy.adapters.dictadapter.DictAdapter
+#:import ListItemButton kivy.uix.listview.ListItemButton
+
+#:import subprocess subprocess
+#:import webbrowser webbrowser
+
+
+<ListItemButton>:
+    deselected_color: [0.25, 0.6, 1., 1.]
+    selected_color: [0.9, 0.5, 0., 1.]
+    markup: True
+
+
+<AddFavouritePopup>:
+    title: "Add Favourite"
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            font_size: 25
+            text: "Name"
+        TextInput:
+            id: txt_inpt_name
+            size_hint_y: None
+            font_size: 25
+            multiline: False
+            height: 1.5*self.line_height
+        Label:
+            font_size: 25
+            text: "Address"
+            height: self.line_height
+        TextInput:
+            id: txt_inpt_address
+            size_hint_y: None
+            font_size: 25
+            multiline: False
+            height: 1.5*self.line_height
+        Widget:
+            size_hint_y: 0.3
+        BoxLayout:
+            Button:
+                id: add_fav_btn
+                text: "Add Favourite"
+            Button:
+                text: "Close Popup"
+                on_press: root.dismiss()
+
+
+<StarterWidget>:
+    orientation: 'vertical'
+    id: starter_widget
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: 0.1
+        Button:
+            text: "Add Favourite"
+            on_press: starter_widget.add_favourite_popup()
+        Button:
+            text: "Refresh Serverlist"
+            on_press: starter_widget.request_serverlist()
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: 0.1
+        Label:
+            text: "Sort by:"
+        Spinner:
+            id: spinner_sort
+            text: "Name"
+            values: ["Name", "Current Players", "Maximum Players", "Gametype", "Mod"]
+            on_text: root.sort_by(self.text)
+        Label:
+            text: "Show empty"
+        Switch:
+            id: switch_empty
+            active: True
+            on_active: root.update_serverlist()
+        Label:
+            text: "Show full"
+        Switch:
+            id: switch_full
+            active: True
+            on_active: root.update_serverlist()
+    ListView:
+        id: server_list
+        adapter: DictAdapter(data={}, selection_mode='single', cls=ListItemButton)
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: 0.1
+        Button:
+            text: "Start Xonotic"
+            on_press: app.start_xon()
+        Button:
+            text: "Connect to server"
+            on_press: starter_widget.connect_to_server()
+
+
+<MainGUI>:
+    orientation: 'vertical'
+
+    ActionBar:
+        ActionView:
+            ActionPrevious:
+                on_press: webbrowser.open("http://xonotic.org")
+                app_icon: app.icon
+                title: ""
+                with_previous: False
+            ActionButton:
+                text: "Settings"
+                on_press: app.open_settings()
+
+    TabbedPanel:
+        id: tabs
+        tab_pos: 'top_mid'
+        do_default_tab: False
+
+        # Serverlist
+        TabbedPanelItem:
+            text: "Start"
+            StarterWidget
+
+        # Support IRC
+        TabbedPanelItem:
+            text: "Support (TODO)"
+            BoxLayout:
+                orientation: 'vertical'
+                Label:
+                    text: "#xonotic irc"
+                TextInput:
+                    size_hint_y: None
+                    multiline: False
+                    text: "type here"
+                    height: 2*self.line_height
+
+        # Pickup IRC
+        TabbedPanelItem:
+            text: "Pickup (TODO)"
+            BoxLayout:
+                orientation: 'vertical'
+                Label:
+                    text: "#xonotic.pickup irc"
+                TextInput:
+                    size_hint_y: None
+                    multiline: False
+                    text: "type here"
+                    height: 2*self.line_height
+

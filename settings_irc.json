@@ -1,0 +1,17 @@
+[
+ {"type": "string",
+  "title": "Nickname",
+  "desc": "Nickname that will be displayed in IRC",
+  "section": "IRC",
+  "key": "nick"},
+ {"type": "string",
+  "title": "Username",
+  "desc": "Username for the Quakenet Auth (leave empty if you don't want to auth)",
+  "section": "IRC",
+  "key": "username"},
+ {"type": "string",
+  "title": "Password",
+  "desc": "Password for the Quakenet Auth (leave empty if you don't want to auth)",
+  "section": "IRC",
+  "key": "password"}
+]

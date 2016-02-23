@@ -1,0 +1,31 @@
+[
+ {
+     "type": "path",
+     "title": "Xonotic application",
+     "desc": "Full path to the Xonotic application (NOT THE APPLICATION ITSELF!)",
+     "section": "Xonotic",
+     "key": "xon_path"
+ },
+ {
+     "type": "options",
+     "title": "Graphics library",
+     "desc": "The graphics library you want to use - glx and sdl for Linux, wgl and sdl for Windows",
+     "section": "Xonotic",
+     "key": "xon_version",
+     "options": ["sdl", "glx", "wgl"]
+ },
+ {
+     "type": "string",
+     "title": "Environment variables",
+     "desc": "Comma separated list of environment variables for Xonotic",
+     "section": "Xonotic",
+     "key": "env_vars"
+ },
+ {
+     "type": "string",
+     "title": "Additional arguments",
+     "desc": "Additional arguments for Xonotic",
+     "section": "Xonotic",
+     "key": "args"
+ }
+]
