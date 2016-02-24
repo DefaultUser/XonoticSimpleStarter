@@ -49,17 +49,22 @@ class AddFavouritePopup(Popup):
 
 class StarterWidget(BoxLayout):
     masterserver = "dpmaster.deathmask.net"
-    request_url = "http://" + masterserver + "/?game=xonotic&?&xml=1&?&showplayers=1"
+    options = "/?game=xonotic&?&xml=1&?&showplayers=1"
+    request_url = "http://" + masterserver + options
     serverstring = "{name} - {gametype}({mod}) - {numplayers}/{maxplayers}"
 
     def __init__(self, *args, **kwargs):
         self.servers = {}
-        self.request_serverlist()
+        self.fav_servers = {}
+        self.request_info()
         return super(StarterWidget, self).__init__(*args, **kwargs)
 
     def add_favourite(self, name, address):
         if not (name and address):
             print "Input is wrong"
+            return False
+        if not ":" in address:
+            print "Please specify the server by ip:port or domain:port"
             return False
         app = App.get_running_app()
         if not app.config.has_section('Favourites'):
@@ -78,7 +83,8 @@ class StarterWidget(BoxLayout):
         address = self.popup.ids.txt_inpt_address.text.strip()
         if self.add_favourite(name, address):
             self.popup.dismiss()
-            self.update_serverlist()
+            addr, port = address.split(":")
+            self.request_serverinfo(addr, port)
 
     def connect_to_server(self):
         """
@@ -89,12 +95,40 @@ class StarterWidget(BoxLayout):
             server = self.ids.server_list.adapter.sorted_keys[index]
             App.get_running_app().start_xon(server)
 
+    def request_info(self):
+        """
+        Request the serverlist and info about favourite servers
+        from the masterserver.
+        """
+        self.request_serverlist()
+        # Favourites
+        config = App.get_running_app().config
+        if config.has_section('Favourites'):
+            for name in config.options('Favourites'):
+                addr_port = config.get('Favourites', name)
+                address, port = addr_port.split(":")
+                self.request_serverinfo(address, port)
+                self.fav_servers[addr_port] = {'name': name,
+                                               'status': 'DOWN',
+                                               'numplayers': 0,
+                                               'maxplayers': 0,
+                                               'gametype': "",
+                                               'mod': "",
+                                               'version': ""}
+
     def request_serverlist(self):
         """
         Request a list of currently public servers from dpmaster.deathmask.net
         """
         getPage(self.request_url, timeout=5).addCallback(
             self.on_serverlist_retrieved)
+
+    def request_serverinfo(self, address, port):
+        """
+        Request info about a specific server from dpmaster.deathmask.net
+        """
+        url = self.request_url + "&server={}:{}".format(address, port)
+        getPage(url, timeout=5).addCallback(self.on_serverinfo_retrieved)
 
     def on_serverlist_retrieved(self, xmlstring):
         """
@@ -106,11 +140,41 @@ class StarterWidget(BoxLayout):
         self.servers = OrderedDict()
         # iterate
         for server in root:
-            if server.attrib['address'] == self.masterserver:
-                print "Number of servers: ", server.attrib['servers']
+            address, serverdict = self.dictify_server(server)
+            if serverdict['type'] == 'MASTERSERVER':
+                print "Number of servers: ", serverdict['numservers']
             else:
-                serverdict = {}
-                # basic info
+                self.servers[address] = serverdict
+        # sort the list
+        self.sort_by(self.ids.spinner_sort.text)
+
+    def on_serverinfo_retrieved(self, xmlstring):
+        """
+        Process the info of a favourite server
+        """
+        tree = ElementTree.ElementTree(ElementTree.fromstring(xmlstring))
+        root = tree.getroot()
+        server = root[0]
+        address, serverdict = self.dictify_server(server)
+        if serverdict['status'] == 'UP':
+            self.fav_servers[address] = serverdict
+            self.sort_favourites()
+        self.update_serverlist()
+
+    def dictify_server(self, server):
+        """
+        Turn the xml Element 'server' into a dictionary
+        """
+        serverdict = {}
+        if server.attrib['address'] == self.masterserver:
+            serverdict['type'] = 'MASTERSERVER'
+            serverdict['numservers'] = server.attrib['servers']
+        else:
+            # basic info
+            serverdict['status'] = server.attrib['status']
+            # info is only available if the server is running
+            if serverdict['status'] == 'UP':
+                serverdict['type'] = 'GAMESERVER'
                 serverdict['name'] = server.find('name').text
                 for field in ['numplayers', 'maxplayers']:
                     serverdict[field] = int(server.find(field).text)
@@ -121,15 +185,15 @@ class StarterWidget(BoxLayout):
                         serverdict['gametype'] = rules[0]
                         serverdict['version'] = rules[1]
                         serverdict['mod'] = rules[5][1:].capitalize()
-                self.servers[server.attrib['address']] = serverdict
-        # sort the list
-        self.sort_by(self.ids.spinner_sort.text)
+        return server.attrib['address'], serverdict
+
 
     def sort_by(self, text):
         keydict = {"Name": 'name', "Current Players": 'numplayers',
                    "Maximum Players": 'maxplayers', "Gametype": 'gametype',
                    "Mod": 'mod'}
         self.sort_serverlist(keydict[text])
+        self.sort_favourites(keydict[text])
 
     def sort_serverlist(self, key='name'):
         # don't sort an empty server list
@@ -146,17 +210,40 @@ class StarterWidget(BoxLayout):
                        key=lambda item: item[1][key].lower()))
         self.update_serverlist()
 
+    def sort_favourites(self, key='name'):
+        # don't sort an empty server list
+        if not self.fav_servers:
+            return
+        # use different sorting for 'numplayers' and 'maxplayers'
+        if key in ['numplayers', 'maxplayers']:
+            self.fav_servers = OrderedDict(
+                sorted(self.fav_servers.items(),
+                       key=lambda item: item[1][key], reverse=True))
+        else:
+            self.fav_servers = OrderedDict(
+                sorted(self.fav_servers.items(),
+                       key=lambda item: item[1][key].lower()))
+        self.update_serverlist()
+
     def update_serverlist(self):
         """
         Update the serverlist. Favourites will always stay on top.
         Only the rest is sorted.
         """
         servers = OrderedDict()
-        config = App.get_running_app().config
-        if config.has_section('Favourites'):
-            for name in config.options('Favourites'):
-                servers[config.get('Favourites', name)] = "[b]{FAV} " + name + "[/b]"
+        for address, server in self.fav_servers.items():
+            if not self.ids.switch_empty.active and server['numplayers'] == 0:
+                continue
+            if (not self.ids.switch_full.active and
+                server['numplayers'] == server['maxplayers']):
+                continue
+            if server['status'] == 'UP':
+                servers[address] = "[b][i]" + self.serverstring.format(**server) + "[/b][/i]"
+            else:
+                servers[address] = "[b][i]" + server['name'] + " (NOT REPLYING)[/b][/i]"
         for address, server in self.servers.items():
+            if address in self.fav_servers:
+                continue
             if not self.ids.switch_empty.active and server['numplayers'] == 0:
                 continue
             if (not self.ids.switch_full.active and
