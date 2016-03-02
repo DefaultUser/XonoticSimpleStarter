@@ -63,7 +63,7 @@ class StarterWidget(BoxLayout):
         if not (name and address):
             print "Input is wrong"
             return False
-        if not ":" in address:
+        if ":" not in address:
             print "Please specify the server by ip:port or domain:port"
             return False
         app = App.get_running_app()
@@ -187,7 +187,6 @@ class StarterWidget(BoxLayout):
                         serverdict['mod'] = rules[5][1:].capitalize()
         return server.attrib['address'], serverdict
 
-
     def sort_by(self, text):
         keydict = {"Name": 'name', "Current Players": 'numplayers',
                    "Maximum Players": 'maxplayers', "Gametype": 'gametype',
@@ -228,26 +227,27 @@ class StarterWidget(BoxLayout):
     def update_serverlist(self):
         """
         Update the serverlist. Favourites will always stay on top.
-        Only the rest is sorted.
         """
         servers = OrderedDict()
         for address, server in self.fav_servers.items():
             if not self.ids.switch_empty.active and server['numplayers'] == 0:
                 continue
             if (not self.ids.switch_full.active and
-                server['numplayers'] == server['maxplayers']):
+                    server['numplayers'] == server['maxplayers']):
                 continue
             if server['status'] == 'UP':
-                servers[address] = "[b][i]" + self.serverstring.format(**server) + "[/b][/i]"
+                servers[address] = "[b][i]{}[/b][/i]".format(
+                    self.serverstring.format(**server))
             else:
-                servers[address] = "[b][i]" + server['name'] + " (NOT REPLYING)[/b][/i]"
+                servers[address] = "[b][i]{} (NOT REPLYING)[/b][/i]".format(
+                    server['name'])
         for address, server in self.servers.items():
             if address in self.fav_servers:
                 continue
             if not self.ids.switch_empty.active and server['numplayers'] == 0:
                 continue
             if (not self.ids.switch_full.active and
-                server['numplayers'] == server['maxplayers']):
+                    server['numplayers'] == server['maxplayers']):
                 continue
             servers[address] = self.serverstring.format(**server)
         self.ids.server_list.adapter.data = servers

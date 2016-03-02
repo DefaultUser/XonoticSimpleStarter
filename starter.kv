@@ -19,6 +19,8 @@
 #:import DictAdapter kivy.adapters.dictadapter.DictAdapter
 #:import ListItemButton kivy.uix.listview.ListItemButton
 
+#:import IRCChannelView irc.IRCChannelView
+
 #:import subprocess subprocess
 #:import webbrowser webbrowser
 
@@ -122,6 +124,12 @@
                 title: ""
                 with_previous: False
             ActionButton:
+                id: btn_connectIRC
+                text: "Connect to IRC"
+            ActionButton:
+                text: "IRC Rules"
+            ActionSeparator
+            ActionButton:
                 text: "Settings"
                 on_press: app.open_settings()
 
@@ -138,26 +146,11 @@
         # Support IRC
         TabbedPanelItem:
             text: "Support (TODO)"
-            BoxLayout:
-                orientation: 'vertical'
-                Label:
-                    text: "#xonotic irc"
-                TextInput:
-                    size_hint_y: None
-                    multiline: False
-                    text: "type here"
-                    height: 2*self.line_height
+            IRCChannelView:
+                channel: "#xonotic"
 
         # Pickup IRC
         TabbedPanelItem:
             text: "Pickup (TODO)"
-            BoxLayout:
-                orientation: 'vertical'
-                Label:
-                    text: "#xonotic.pickup irc"
-                TextInput:
-                    size_hint_y: None
-                    multiline: False
-                    text: "type here"
-                    height: 2*self.line_height
-
+            IRCChannelView:
+                channel: "#xonotic.pickup"

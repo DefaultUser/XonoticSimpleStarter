@@ -1,0 +1,54 @@
+#:kivy 1.8.0
+
+# XonoticSimpleStarter
+# Copyright (C) <2016>  <Sebastian Schmidt>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+<ScrollableLabel>:
+    Label:
+        markup: True
+        text: root.text
+        size_hint_y: None
+        text_size: self.width, None
+        height: self.texture_size[1]
+
+
+<HSeparator>
+    size_hint_y: None
+    thickness: 2
+    margin: 1
+    height: self.thickness + 2 * self.margin
+    color: 0.25, 0.6, 1.0, 0.5
+    canvas:
+        Color:
+            rgba: self.color
+        Rectangle:
+            pos: self.x + self.margin, self.y + self.margin
+            size: self.width - 2 * self.margin, self.thickness
+
+
+<VSeparator>
+    size_hint_x: None
+    thickness: 2
+    margin: 1
+    width: self.thickness + 2 * self.margin
+    color: 0.25, 0.6, 1.0, 0.5
+    canvas:
+        Color:
+            rgba: self.color
+        Rectangle:
+            pos: self.x + self.margin, self.y + self.margin
+            size: self.thickness, self.height - 2 * self.margin
