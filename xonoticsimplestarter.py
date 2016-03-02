@@ -278,16 +278,20 @@ class StarterApp(App):
         xon_path = self.config.get('Xonotic', 'xon_path')
         xon_version = self.config.get('Xonotic', 'xon_version')
         if sys.platform.startswith('linux'):
-            xon_script = "xonotic-linux-{}.sh".format(xon_version)
+            xon_app = "xonotic-linux-{}.sh".format(xon_version)
         elif sys.platform in ["win32", "cygwin"]:
-            xon_script = "xonotic-windows-{}.bat".format(xon_version)
+            if xon_version == "sdl":
+                xon_app = "xonotic.exe"
+            else:
+                xon_app = "xonotic-wgl.exe"
+            args.extend(["-basedir", xon_path])
         elif sys.platform == "darwin":
-            xon_script = "Xonotic.app"
+            xon_app = "Xonotic.app"
         else:
             print "Unsupported platform"
             return
 
-        args.insert(0, os.path.join(xon_path, xon_script))
+        args.insert(0, os.path.join(xon_path, xon_app))
 
         if server:
             args.extend(["+connect", server])
