@@ -34,6 +34,8 @@ import os
 import sys
 from collections import OrderedDict
 
+import irc
+
 
 def script_dir():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -258,6 +260,9 @@ class StarterApp(App):
     title = "Xonotic Starter"
     use_kivy_settings = False
 
+    def on_start(self):
+        self.irccontroller = irc.IRCController()
+
     def start_xon(self, server=None):
         """
         Start Xonotic with the given environment variables and arguments
@@ -315,9 +320,10 @@ class StarterApp(App):
             'xon_version': "sdl",
             'args': ""})
         config.setdefaults('IRC', {
-            'nick': "",
+            'nick': "XonoticFan",
             'username': "",
-            'password': ""})
+            'password': "",
+            'autojoin': False})
 
     def build_settings(self, settings):
         settings.add_json_panel('Xonotic', self.config,

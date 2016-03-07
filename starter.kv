@@ -43,7 +43,7 @@
             size_hint_y: None
             font_size: 25
             multiline: False
-            height: 1.5*self.line_height
+            height: self.minimum_height
         Label:
             font_size: 25
             text: "Address"
@@ -53,7 +53,7 @@
             size_hint_y: None
             font_size: 25
             multiline: False
-            height: 1.5*self.line_height
+            height: self.minimum_height
         Widget:
             size_hint_y: 0.3
         BoxLayout:
@@ -126,8 +126,10 @@
             ActionButton:
                 id: btn_connectIRC
                 text: "Connect to IRC"
+                on_press: app.irccontroller.toggle_connection()
             ActionButton:
                 text: "IRC Rules"
+                on_press: webbrowser.open("https://www.quakenet.org/help/rules/main-rules")
             ActionSeparator
             ActionButton:
                 text: "Settings"
@@ -145,12 +147,14 @@
 
         # Support IRC
         TabbedPanelItem:
-            text: "Support (TODO)"
+            text: "Support"
             IRCChannelView:
+                id: irc_xonotic
                 channel: "#xonotic"
 
         # Pickup IRC
         TabbedPanelItem:
-            text: "Pickup (TODO)"
+            text: "Pickup"
             IRCChannelView:
+                id: irc_pickup
                 channel: "#xonotic.pickup"

@@ -34,21 +34,23 @@
             text: "Topic"
         Button:
             id: btn_join_part
+            disabled: True
             size_hint_x: 0.3
             text: "Join"
+            on_press: app.irccontroller.join_or_part(root.channel)
     HSeparator
     BoxLayout:
         orientation: 'horizontal'
         ScrollableLabel:
             id: txt_display
-            text: root.channel
         VSeparator
         ListView:
             size_hint_x: 0.3
-            adapter: ListAdapter(data=["Users"]*40, cls=ListItemLabel)
+            adapter: ListAdapter(data=[], cls=ListItemLabel)
     TextInput:
         id: txt_input
         size_hint_y: None
         multiline: False
-        text: "type here"
-        height: 2*self.line_height
+        height: self.minimum_height
+        disabled: True
+        on_text_validate: root.process_text(self.text)

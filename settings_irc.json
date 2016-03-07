@@ -13,5 +13,10 @@
   "title": "Password",
   "desc": "Password for the Quakenet Auth (leave empty if you don't want to auth)",
   "section": "IRC",
-  "key": "password"}
+  "key": "password"},
+ {"type": "bool",
+  "title": "Autojoin",
+  "desc": "Automatically join IRC Channels",
+  "section": "IRC",
+  "key": "autojoin"}
 ]
