@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
+
 from kivy.app import App
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, BooleanProperty
@@ -27,41 +29,77 @@ from twisted.words.protocols import irc
 Builder.load_file("ircchannelview.kv")
 
 
+def colored(text, color):
+    colors = OrderedDict([("white", "ffffff"), ("black", "000000"),
+                          ("blue", "00007f"), ("green", "009300"),
+                          ("red", "ff0000"), ("brown", "7f0000"),
+                          ("purple", "9c009c"), ("orange", "fc7f00"),
+                          ("yellow", "ffff00"), ("lightgreen", "00fc00"),
+                          ("cyan", "009393"), ("lightcyan", "00ffff"),
+                          ("lightblue", "0000fc"), ("pink", "ff00ff"),
+                          ("grey", "7f7f7f"), ("lightgrey", "d2d2d2")])
+    if color not in colors:
+        print "Color ", color, " is not available"
+        return text
+    return "[color={}]{}[/color]".format(colors[color], text)
+
+
+def bold(text):
+    return "[b]{}[/b]".format(text)
+
+
+def italic(text):
+    return "[i]{}[/i]".format(text)
+
+
 class IRCChannelView(BoxLayout):
     channel = StringProperty("")
 
-    def append_msg(self, username, msg):
+    def topicUpdated(self, newTopic):
+        # TODO: Color and format information
+        self.ids.txt_topic.text = newTopic
+
+    def append_line(self, line):
+        self.ids.txt_display.text += line + "\n"
+
+    def append_msg(self, user, msg):
         """
         Append a message to the IRC chat
         """
-        self.ids.txt_display.text += "{:<20} {}\n".format(username, msg)
+        # TODO: Color and format information
+        self.append_line("{:>20} {}".format(user, msg))
+
+    def append_action(self, user, data):
+        self.append_line(colored(italic("{:>20} {}".format(user, data))),
+                         "blue")
+
+    def append_notice(self, user, msg):
+        self.append_line(colored("{:*>20} {}".format(user, msg), "orange"))
 
     def on_connected(self):
-        self.ids.txt_display.text += "[color=00ff00]Connected[/color]\n"
+        self.append_line(colored("Connected", "green"))
         self.ids.btn_join_part.disabled = False
 
     def on_disconnected(self):
-        self.ids.txt_display.text += "[color=ff0000]Disconnected[/color]\n"
+        self.append_line(colored("Disconnected", "red"))
         self.ids.btn_join_part.disabled = True
         self.ids.txt_input.disabled = True
 
     def on_joined(self):
         self.ids.btn_join_part.text = "Part"
-        self.ids.txt_display.text += ("[color=00ff00]You joined {}"
-                                      "[/color]\n").format(self.channel)
+        self.append_line(colored("You joined {}".format(self.channel),
+                                 "lightgreen"))
         self.ids.txt_input.disabled = False
 
     def on_left(self):
         self.ids.btn_join_part.text = "Join"
-        self.ids.txt_display.text += ("[color=ffaa00]You left {}"
-                                      "[/color]\n").format(self.channel)
+        self.append_line(colored("You left {}".format(self.channel), "red"))
         self.ids.txt_input.disabled = True
 
     def on_kicked(self, message):
         self.ids.btn_join_part.text = "Join"
-        self.ids.txt_display.text += ("[color=ff0000]You were kicked from "
-                                      "{} ({})[/color]\n").format(self.channel,
-                                                                  message)
+        self.append_line(colored("You were kicked from {} ({})".format(
+            self.channel, message), "red"))
         self.ids.txt_input.disabled = True
 
     def process_text(self, text):
@@ -117,20 +155,23 @@ class IRCClient(irc.IRCClient):
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.on_left()
 
-    def kickedFrom(self, channel, kicker, message):
+    def kickedFrom(self, channel, kicker, msg):
         print "Kicked from ", channel, "by ", kicker
         self.joined_channels.remove(channel)
         irc_view = self.factory.controller.get_irc_widget(channel)
-        irc_view.on_kicked(message)
+        irc_view.on_kicked(msg)
 
     def privmsg(self, user, channel, msg):
+        if channel not in self.joined_channels:
+            print "Message from ", channel, "(", user, "): ", msg
+            return
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.append_msg(user.split("!")[0], msg)
 
     def userJoined(self, user, channel):
         pass
 
-    def userKicked(self, kickee, channel, kicker, message):
+    def userKicked(self, kickee, channel, kicker, msg):
         pass
 
     def userLeft(self, user, channel):
@@ -143,14 +184,33 @@ class IRCClient(irc.IRCClient):
         pass
 
     def action(self, user, channel, data):
-        pass
+        if channel not in self.joined_channels:
+            print "Action in ", channel, " ", user, " ", data
+            return
+        irc_view = self.factory.controller.get_irc_widget(channel)
+        irc_view.append_action(user.split("!")[0], data)
 
-    def noticed(self, user, channel, message):
-        pass
+    def noticed(self, user, channel, msg):
+        # Channel will always be your nick or a channel you're in
+        if channel in self.joined_channels:
+            notice_channels = [channel]
+        else:
+            notice_channels = self.joined_channels
+        for chan in notice_channels:
+            irc_view = self.factory.controller.get_irc_widget(chan)
+            irc_view.append_notice(user.split("!")[0], msg)
 
     def nickChanged(self, nick):
         """Triggered when own nick changes"""
         self.nickname = nick
+
+    def topicUpdated(self, user, channel, newTopic):
+        if channel not in self.joined_channels:
+            print "Got topic for a channel you have not joined"
+            print "This should never happen"
+            return
+        irc_view = self.factory.controller.get_irc_widget(channel)
+        irc_view.topicUpdated(newTopic)
 
 
 class IRCFactory(protocol.ClientFactory):
@@ -201,6 +261,7 @@ class IRCController(EventDispatcher):
     def disconnect(self):
         if not self.is_connected:
             return
+        self.ircfactory.client.quit()
         self.connector.disconnect()
         self.is_connected = False
         for channel in self.ircfactory.client.joined_channels:

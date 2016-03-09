@@ -263,6 +263,10 @@ class StarterApp(App):
     def on_start(self):
         self.irccontroller = irc.IRCController()
 
+    def on_stop(self):
+        # Disconnect from IRC if window is destroyed
+        self.irccontroller.disconnect()
+
     def start_xon(self, server=None):
         """
         Start Xonotic with the given environment variables and arguments
