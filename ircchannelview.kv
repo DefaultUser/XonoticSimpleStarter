@@ -43,9 +43,13 @@
         ScrollableLabel:
             id: txt_display
         VSeparator
-        ListView:
+        ScrollView:
             size_hint_x: 0.3
-            adapter: ListAdapter(data=[], cls=ListItemLabel)
+            TreeView:
+                id: tree_users
+                hide_root: True
+                size_hint_y: None
+                height: self.minimum_height
     TextInput:
         id: txt_input
         size_hint_y: None

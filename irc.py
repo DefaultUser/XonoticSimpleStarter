@@ -20,6 +20,7 @@ from kivy.app import App
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, BooleanProperty
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.treeview import TreeViewLabel
 from kivy.lang import Builder
 
 from twisted.internet import protocol, reactor
@@ -84,6 +85,7 @@ class IRCChannelView(BoxLayout):
         self.append_line(colored("Disconnected", "red"))
         self.ids.btn_join_part.disabled = True
         self.ids.txt_input.disabled = True
+        self.clear_userlist()
 
     def on_joined(self):
         self.ids.btn_join_part.text = "Part"
@@ -95,12 +97,179 @@ class IRCChannelView(BoxLayout):
         self.ids.btn_join_part.text = "Join"
         self.append_line(colored("You left {}".format(self.channel), "red"))
         self.ids.txt_input.disabled = True
+        self.clear_userlist()
 
     def on_kicked(self, message):
         self.ids.btn_join_part.text = "Join"
         self.append_line(colored("You were kicked from {} ({})".format(
-            self.channel, message), "red"))
+            self.channel, message or "No reason given"), "red"))
         self.ids.txt_input.disabled = True
+        self.clear_userlist()
+
+    def on_nickChanged(self, oldnick, newnick):
+        self.append_line(colored("You are now known as {}".format(newnick),
+                                 "lightcyan"))
+        self.rename_user_in_tree(oldnick, newnick)
+
+    def on_userJoined(self, user):
+        self.append_line(colored("{} joined {}".format(user, self.channel),
+                                 "cyan"))
+        # new users join as normal users
+        # modes are changed after joining
+        self.normalusers.append(user)
+        self.normalusers.sort(key=str.lower)
+        self.update_userlist()
+
+    def on_userKicked(self, kickee, kicker, msg):
+        self.append_line(colored("{} was kicked by {} ({})".format(
+            kickee, kicker, msg), "brown"))
+        self.remove_user_from_tree(kickee)
+
+    def on_userLeft(self, user):
+        self.append_line(colored("{} left {}".format(user, self.channel),
+                                 "cyan"))
+        self.remove_user_from_tree(user)
+
+    def on_userQuit(self, user, msg):
+        if user not in self.users:
+            return
+        self.append_line(colored("{} quit ({})".format(user, msg), "cyan"))
+        self.remove_user_from_tree(user)
+
+    def on_userRenamed(self, oldname, newname):
+        if oldname not in self.users:
+            return
+        self.append_line(colored("{} is now known as {}".format(oldname,
+                                                                newname),
+                         "lightcyan"))
+        self.rename_user_in_tree(oldname, newname)
+
+    def on_modeChanged(self, user, set, modes, args):
+        user = user.split("!")[0]
+        token = "+" if set else "-"
+        self.append_line(colored("Mode {}{} for {} by {}".format(
+            token, modes, args, user), "cyan"))
+        for mode in modes:
+            if mode == "o":
+                if set:
+                    self.users_oped(args)
+                else:
+                    self.users_deoped(args)
+            elif mode == "v":
+                if set:
+                    self.users_voiced(args)
+                else:
+                    self.users_devoiced(args)
+
+    @property
+    def users(self):
+        return self.ops + self.voiced + self.normalusers
+
+    def set_userlist_from_NAMES(self, users):
+        """
+        Set the userlist after a reply from a NAMES query
+        """
+        self.clear_userlist()
+        for user in users:
+            if user.startswith("@"):
+                self.ops.append(user[1:])
+            elif user.startswith("+"):
+                self.voiced.append(user[1:])
+            else:
+                self.normalusers.append(user)
+        self.ops.sort(key=str.lower)
+        self.voiced.sort(key=str.lower)
+        self.normalusers.sort(key=str.lower)
+        self.update_userlist()
+
+    def update_userlist(self):
+        """
+        Update the list of users in this channel
+        """
+        self.clear_user_treeview()
+        tree = self.ids.tree_users
+        root_op = tree.add_node(TreeViewLabel(text="Operators", is_open=True))
+        root_voiced = tree.add_node(TreeViewLabel(text="Voiced", is_open=True))
+        root_normal = tree.add_node(TreeViewLabel(text="Users", is_open=True))
+        for op in self.ops:
+            tree.add_node(TreeViewLabel(text=op), root_op)
+        for voice in self.voiced:
+            tree.add_node(TreeViewLabel(text=voice), root_voiced)
+        for user in self.normalusers:
+            tree.add_node(TreeViewLabel(text=user), root_normal)
+
+    def clear_userlist(self):
+        """
+        Clear the userlist completely
+        """
+        self.ops = []
+        self.voiced = []
+        self.normalusers = []
+        self.clear_user_treeview()
+
+    def clear_user_treeview(self):
+        """
+        Clear the contents of the userlist treewidget
+        """
+        tree = self.ids.tree_users
+        for node in list(tree.iterate_all_nodes()):
+            tree.remove_node(node)
+
+    def remove_user_from_tree(self, user):
+        if user in self.ops:
+            self.ops.remove(user)
+        if user in self.voiced:
+            self.voiced.remove(user)
+        if user in self.normalusers:
+            self.normalusers.remove(user)
+        for node in list(self.ids.tree_users.iterate_all_nodes()):
+            if node.text == user:
+                self.ids.tree_users.remove_node(node)
+                break
+
+    def rename_user_in_tree(self, oldname, newname):
+        if oldname in self.ops:
+            self.ops[self.ops.index(oldname)] = newname
+        if oldname in self.voiced:
+            self.voiced[self.voiced.index(oldname)] = newname
+        if oldname in self.normalusers:
+            self.normalusers[self.normalusers.index(oldname)] = newname
+        for node in list(self.ids.tree_users.iterate_all_nodes()):
+            if node.text == oldname:
+                node.text = newname
+
+    def users_oped(self, users):
+        for user in users:
+            if user in self.normalusers:
+                self.normalusers.remove(user)
+            elif user in self.voiced:
+                self.voiced.remove(user)
+            self.ops.append(user)
+        self.ops.sort(key=str.lower)
+        self.update_userlist()
+
+    def users_deoped(self, users):
+        for user in users:
+            self.ops.remove(user)
+            self.normalusers.append(user)
+        self.normalusers.sort(key=str.lower)
+        self.update_userlist()
+
+    def users_voiced(self, users):
+        for user in users:
+            if user in self.normalusers:
+                self.normalusers.remove(user)
+                self.voiced.append(user)
+            # Don't remove the user from ops
+        self.voiced.sort(key=str.lower)
+        self.update_userlist()
+
+    def users_devoiced(self, users):
+        for user in users:
+            self.voiced.remove(user)
+            self.normalusers.append(user)
+        self.normalusers.sort(key=str.lower)
+        self.update_userlist()
 
     def process_text(self, text):
         self.ids.txt_input.text = ""
@@ -121,6 +290,7 @@ class IRCClient(irc.IRCClient):
     def __init__(self):
         self.joined_channels = []
         self.nickname = str(App.get_running_app().config.get('IRC', 'nick'))
+        self._userlist = {}
 
     def auth(self):
         """
@@ -152,12 +322,18 @@ class IRCClient(irc.IRCClient):
     def left(self, channel):
         print "Left", channel
         self.joined_channels.remove(channel)
+        # remove the channel from the _userlist
+        # use a default value in case the NAMRPLY was not received before
+        self._userlist.pop(channel, None)
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.on_left()
 
     def kickedFrom(self, channel, kicker, msg):
         print "Kicked from ", channel, "by ", kicker
         self.joined_channels.remove(channel)
+        # remove the channel from the _userlist
+        # use a default value in case the NAMRPLY was not received before
+        self._userlist.pop(channel, None)
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.on_kicked(msg)
 
@@ -169,19 +345,36 @@ class IRCClient(irc.IRCClient):
         irc_view.append_msg(user.split("!")[0], msg)
 
     def userJoined(self, user, channel):
-        pass
+        irc_view = self.factory.controller.get_irc_widget(channel)
+        irc_view.on_userJoined(user)
 
     def userKicked(self, kickee, channel, kicker, msg):
-        pass
+        irc_view = self.factory.controller.get_irc_widget(channel)
+        irc_view.on_userKicked(kickee, kicker, msg)
 
     def userLeft(self, user, channel):
-        pass
+        if channel not in self.joined_channels:
+            print "Got userLeft message from a channel you have not joined"
+            print "This should never happen"
+            return
+        irc_view = self.factory.controller.get_irc_widget(channel)
+        irc_view.on_userLeft(user)
 
     def userQuit(self, user, quitMessage):
-        pass
+        for channel in self.joined_channels:
+            irc_view = self.factory.controller.get_irc_widget(channel)
+            irc_view.on_userQuit(user, quitMessage)
 
     def userRenamed(self, oldname, newname):
-        pass
+        for channel in self.joined_channels:
+            irc_view = self.factory.controller.get_irc_widget(channel)
+            irc_view.on_userRenamed(oldname, newname)
+
+    def modeChanged(self, user, channel, set, modes, args):
+        if channel not in self.joined_channels:
+            return
+        irc_view = self.factory.controller.get_irc_widget(channel)
+        irc_view.on_modeChanged(user, set, modes, args)
 
     def action(self, user, channel, data):
         if channel not in self.joined_channels:
@@ -202,6 +395,9 @@ class IRCClient(irc.IRCClient):
 
     def nickChanged(self, nick):
         """Triggered when own nick changes"""
+        for channel in self.joined_channels:
+            irc_view = self.factory.controller.get_irc_widget(channel)
+            irc_view.on_nickChanged(self.nickname, nick)
         self.nickname = nick
 
     def topicUpdated(self, user, channel, newTopic):
@@ -211,6 +407,29 @@ class IRCClient(irc.IRCClient):
             return
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.topicUpdated(newTopic)
+
+    def irc_RPL_NAMREPLY(self, prefix, params):
+        """
+        Reply for the NAMES command. Will only be issued when joining a
+        channel.
+        """
+        channel = params[2]
+        users = params[3].split()
+        if channel not in self.joined_channels:
+            print "Received user list for channel: ", channel, ", ignoring it"
+            return
+        if channel not in self._userlist:
+            self._userlist[channel] = users
+        else:
+            self._userlist[channel].extend(users)
+
+    def irc_RPL_ENDOFNAMES(self, prefix, params):
+        channel = params[1]
+        if channel not in self.joined_channels:
+            print "Received user list for channel: ", channel, ", ignoring it"
+            return
+        irc_view = self.factory.controller.get_irc_widget(channel)
+        irc_view.set_userlist_from_NAMES(self._userlist[channel])
 
 
 class IRCFactory(protocol.ClientFactory):
