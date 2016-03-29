@@ -42,7 +42,15 @@ def script_dir():
 
 
 class MainGUI(BoxLayout):
-    pass
+    def ircrules_popup(self):
+        IRCRulesPopup().open()
+
+
+class IRCRulesPopup(Popup):
+    ircrules = ("#1: Don't ask to ask - just ask\n#2: Behave as you would do "
+                "in a real life conversation\n#3: Be patient - People might "
+                "need time to nitice your question\n\nMore rules can be "
+                "found [color=0000ff][ref=qn-rules]here[/ref][/color]")
 
 
 class AddFavouritePopup(Popup):
