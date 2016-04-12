@@ -83,9 +83,11 @@ class StarterWidget(BoxLayout):
         app.config.write()
         return True
 
-    def add_favourite_popup(self):
+    def add_favourite_popup(self, address=None):
         self.popup = AddFavouritePopup()
         self.popup.ids.add_fav_btn.bind(on_press=self.add_fav_btn_callback)
+        if address:
+            self.popup.ids.txt_inpt_address.text = address
         self.popup.open()
 
     def add_fav_btn_callback(self, sender):
@@ -95,6 +97,13 @@ class StarterWidget(BoxLayout):
             self.popup.dismiss()
             addr, port = address.split(":")
             self.request_serverinfo(addr, port)
+
+    def add_server_to_favourites(self):
+        if self.ids.server_list.adapter.selection:
+            index = self.ids.server_list.adapter.selection[0].index
+            server = self.ids.server_list.adapter.sorted_keys[index]
+            if server not in self.fav_servers.keys():
+                self.add_favourite_popup(address=server)
 
     def connect_to_server(self):
         """
