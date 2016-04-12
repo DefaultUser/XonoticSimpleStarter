@@ -31,6 +31,12 @@
     markup: True
 
 
+<TextInput>:
+    write_tab: False
+    foreground_color: [1., 1., 1., 1.]
+    background_color: [0.4, 0.4, 0.4, 1.]
+
+
 <IRCRulesPopup>:
     title: "IRC Rules"
     BoxLayout:
@@ -96,6 +102,13 @@
     BoxLayout:
         orientation: 'horizontal'
         size_hint_y: 0.1
+        Label:
+            text: "Filter"
+        TextInput:
+            id: txt_input_filter
+            multiline: False
+            height: self.minimum_height
+            on_text: root.update_serverlist()
         Label:
             text: "Sort by:"
         Spinner:

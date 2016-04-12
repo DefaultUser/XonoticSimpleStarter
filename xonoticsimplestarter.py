@@ -238,8 +238,11 @@ class StarterWidget(BoxLayout):
         """
         Update the serverlist. Favourites will always stay on top.
         """
+        filter_str = self.ids.txt_input_filter.text.strip().lower()
         servers = OrderedDict()
         for address, server in self.fav_servers.items():
+            if filter_str not in server['name'].lower():
+                continue
             if not self.ids.switch_empty.active and server['numplayers'] == 0:
                 continue
             if (not self.ids.switch_full.active and
@@ -253,6 +256,8 @@ class StarterWidget(BoxLayout):
                     server['name'])
         for address, server in self.servers.items():
             if address in self.fav_servers:
+                continue
+            if filter_str not in server['name'].lower():
                 continue
             if not self.ids.switch_empty.active and server['numplayers'] == 0:
                 continue
