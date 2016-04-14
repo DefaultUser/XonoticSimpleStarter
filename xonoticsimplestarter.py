@@ -23,6 +23,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
+from kivy.uix.treeview import TreeViewLabel
 
 install_twisted_reactor()
 
@@ -99,9 +100,8 @@ class StarterWidget(BoxLayout):
             self.request_serverinfo(addr, port)
 
     def add_server_to_favourites(self):
-        if self.ids.server_list.adapter.selection:
-            index = self.ids.server_list.adapter.selection[0].index
-            server = self.ids.server_list.adapter.sorted_keys[index]
+        if self.ids.server_list.selected_node:
+            server = self.ids.server_list.selected_node.address
             if server not in self.fav_servers.keys():
                 self.add_favourite_popup(address=server)
 
@@ -109,9 +109,8 @@ class StarterWidget(BoxLayout):
         """
         Get the selected server and connect to it
         """
-        if self.ids.server_list.adapter.selection:
-            index = self.ids.server_list.adapter.selection[0].index
-            server = self.ids.server_list.adapter.sorted_keys[index]
+        if self.ids.server_list.selected_node:
+            server = self.ids.server_list.selected_node.address
             App.get_running_app().start_xon(server)
 
     def request_info(self):
@@ -208,8 +207,7 @@ class StarterWidget(BoxLayout):
 
     def sort_by(self, text):
         keydict = {"Name": 'name', "Current Players": 'numplayers',
-                   "Maximum Players": 'maxplayers', "Gametype": 'gametype',
-                   "Mod": 'mod'}
+                   "Maximum Players": 'maxplayers', "Gametype": 'gametype'}
         self.sort_serverlist(keydict[text])
         self.sort_favourites(keydict[text])
 
@@ -247,6 +245,8 @@ class StarterWidget(BoxLayout):
         """
         Update the serverlist. Favourites will always stay on top.
         """
+        self.clear_serverlist()
+        tree = self.ids.server_list
         filter_str = self.ids.txt_input_filter.text.strip().lower()
         servers = OrderedDict()
         for address, server in self.fav_servers.items():
@@ -258,11 +258,14 @@ class StarterWidget(BoxLayout):
                     server['numplayers'] == server['maxplayers']):
                 continue
             if server['status'] == 'UP':
-                servers[address] = "[b][i]{}[/b][/i]".format(
+                display_str = "[b][i]{}[/b][/i]".format(
                     self.serverstring.format(**server))
             else:
-                servers[address] = "[b][i]{} (NOT REPLYING)[/b][/i]".format(
+                display_str = "[b][i]{} (NOT REPLYING)[/b][/i]".format(
                     server['name'])
+            node = tree.add_node(TreeViewLabel(text=display_str),
+                                 self.servertype_nodes['fav'])
+            node.address = address
         for address, server in self.servers.items():
             if address in self.fav_servers:
                 continue
@@ -273,9 +276,45 @@ class StarterWidget(BoxLayout):
             if (not self.ids.switch_full.active and
                     server['numplayers'] == server['maxplayers']):
                 continue
-            servers[address] = self.serverstring.format(**server)
-        self.ids.server_list.adapter.data = servers
-        self.ids.server_list.adapter.sorted_keys = servers.keys()
+            display_str = self.serverstring.format(**server)
+            if server['mod'] in ('Xonotic', 'Xpm'):
+                parent = self.servertype_nodes['vanilla']
+            elif server['mod'] == 'Instagib':
+                parent = self.servertype_nodes['insta']
+            elif server['mod'] == 'Overkill':
+                parent = self.servertype_nodes['ok']
+            elif server['mod'] == 'Xdf':
+                parent = self.servertype_nodes['xdf']
+            else:
+                parent = self.servertype_nodes['other']
+            node = tree.add_node(TreeViewLabel(text=display_str), parent)
+            node.address = address
+
+    def clear_serverlist(self):
+        tree = self.ids.server_list
+        for node in list(tree.iterate_all_nodes()):
+            tree.remove_node(node)
+
+        nodes = {}
+        nodes['fav'] = tree.add_node(TreeViewLabel(text="Favourites",
+                                                   is_open=True,
+                                                   no_selection=True))
+        nodes['vanilla'] = tree.add_node(TreeViewLabel(text="All Weapons",
+                                                       is_open=True,
+                                                       no_selection=True))
+        nodes['insta'] = tree.add_node(TreeViewLabel(text="Instagib",
+                                                     is_open=True,
+                                                     no_selection=True))
+        nodes['ok'] = tree.add_node(TreeViewLabel(text="Overkill",
+                                                  is_open=True,
+                                                  no_selection=True))
+        nodes['xdf'] = tree.add_node(TreeViewLabel(text="XDF",
+                                                   is_open=True,
+                                                   no_selection=True))
+        nodes['other'] = tree.add_node(TreeViewLabel(text="Other",
+                                                     is_open=True,
+                                                     no_selection=True))
+        self.servertype_nodes = nodes
 
 
 class StarterApp(App):

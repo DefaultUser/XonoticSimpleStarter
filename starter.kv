@@ -25,9 +25,7 @@
 #:import webbrowser webbrowser
 
 
-<ListItemButton>:
-    deselected_color: [0.25, 0.6, 1., 1.]
-    selected_color: [0.9, 0.5, 0., 1.]
+<TreeViewLabel>:
     markup: True
 
 
@@ -114,7 +112,7 @@
         Spinner:
             id: spinner_sort
             text: "Name"
-            values: ["Name", "Current Players", "Maximum Players", "Gametype", "Mod"]
+            values: ["Name", "Current Players", "Maximum Players", "Gametype"]
             on_text: root.sort_by(self.text)
         Label:
             text: "Show empty"
@@ -128,9 +126,12 @@
             id: switch_full
             active: True
             on_active: root.update_serverlist()
-    ListView:
-        id: server_list
-        adapter: DictAdapter(data={}, selection_mode='single', cls=ListItemButton)
+    ScrollView:
+        TreeView:
+            id: server_list
+            hide_root: True
+            size_hint_y: None
+            height: self.minimum_height
     BoxLayout:
         orientation: 'horizontal'
         size_hint_y: 0.1
