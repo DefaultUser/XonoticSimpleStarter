@@ -27,6 +27,8 @@ from kivy.uix.popup import Popup
 from kivy.uix.treeview import TreeViewLabel
 from kivy.core.text import LabelBase
 
+from basewidgets import TreeViewContainerNode
+
 install_twisted_reactor()
 
 from xml.etree import cElementTree as ElementTree
@@ -149,8 +151,8 @@ class StarterWidget(BoxLayout):
                                                'status': 'DOWN',
                                                'numplayers': 0,
                                                'maxplayers': 0,
-                                               'gametype': "",
-                                               'mod': "",
+                                               'gametype': "??",
+                                               'mod': "??",
                                                'version': ""}
 
     def request_serverlist(self):
@@ -276,14 +278,16 @@ class StarterWidget(BoxLayout):
             if (not self.ids.switch_full.active and
                     server['numplayers'] == server['maxplayers']):
                 continue
-            if server['status'] == 'UP':
-                display_str = "[b][i]{}[/b][/i]".format(
-                    self.serverstring.format(**server))
-            else:
-                display_str = "[b][i]{} (NOT REPLYING)[/b][/i]".format(
-                    server['name'])
-            node = tree.add_node(TreeViewLabel(text=display_str),
-                                 self.servertype_nodes['fav'])
+            node = TreeViewContainerNode(height=32)
+            node.add_widget(Label(text="[b]{}[/b]".format(server['name']),
+                                  size_hint_x=0.6))
+            node.add_widget(Label(text="{} ({})".format(server['gametype'],
+                                                        server['mod']),
+                                  size_hint_x=0.2))
+            node.add_widget(Label(text="{}/{}".format(server['numplayers'],
+                                                      server['maxplayers']),
+                                  size_hint_x=0.2))
+            tree.add_node(node, self.servertype_nodes['fav'])
             node.address = address
         for address, server in self.servers.items():
             if address in self.fav_servers:
@@ -306,7 +310,15 @@ class StarterWidget(BoxLayout):
                 parent = self.servertype_nodes['xdf']
             else:
                 parent = self.servertype_nodes['other']
-            node = tree.add_node(TreeViewLabel(text=display_str), parent)
+            node = TreeViewContainerNode(height=32)
+            node.add_widget(Label(text=server['name'], size_hint_x=0.6))
+            node.add_widget(Label(text="{} ({})".format(server['gametype'],
+                                                        server['mod']),
+                                  size_hint_x=0.2))
+            node.add_widget(Label(text="{}/{}".format(server['numplayers'],
+                                                      server['maxplayers']),
+                                  size_hint_x=0.2))
+            tree.add_node(node, parent)
             node.address = address
 
     def clear_serverlist(self):

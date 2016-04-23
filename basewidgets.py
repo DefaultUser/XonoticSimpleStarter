@@ -17,7 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from kivy.properties import StringProperty
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.treeview import TreeViewNode
 from kivy.uix.widget import Widget
 from kivy.lang import Builder
 
@@ -34,4 +36,8 @@ class HSeparator(Widget):
 
 
 class VSeparator(Widget):
+    pass
+
+
+class TreeViewContainerNode(BoxLayout, TreeViewNode):
     pass
