@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from kivy.app import App
+from kivy.lang import Builder
 from kivy.support import install_twisted_reactor
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
@@ -24,6 +25,7 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.uix.treeview import TreeViewLabel
+from kivy.core.text import LabelBase
 
 install_twisted_reactor()
 
@@ -42,6 +44,23 @@ def script_dir():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
+def register_fonts():
+    """
+    Load additional Fonts
+    """
+    LabelBase.register(name="xolonium", fn_regular="Xolonium-Regular.otf",
+                       fn_bold="Xolonium-Bold.otf",)
+
+
+def apply_theme(theme):
+    """
+    Apply a theme specified by theme/<themename>.kv
+    """
+    if not theme or theme == 'default':
+        return
+    Builder.load_file("themes/{}.kv".format(theme))
+
+
 class MainGUI(BoxLayout):
     def ircrules_popup(self):
         IRCRulesPopup().open()
@@ -50,7 +69,7 @@ class MainGUI(BoxLayout):
 class IRCRulesPopup(Popup):
     ircrules = ("#1: Don't ask to ask - just ask\n#2: Behave as you would do "
                 "in a real life conversation\n#3: Be patient - People might "
-                "need time to nitice your question\n\nMore rules can be "
+                "need time to notice your question\n\nMore rules can be "
                 "found [color=0000ff][ref=qn-rules]here[/ref][/color]")
 
 
@@ -401,6 +420,8 @@ class StarterApp(App):
     def build(self):
         self.icon = os.path.join(self.config.get('Xonotic', 'xon_path'),
                                  "misc/logos/icons_png/xonotic_64.png")
+        register_fonts()
+        apply_theme("luma")
         return MainGUI()
 
 

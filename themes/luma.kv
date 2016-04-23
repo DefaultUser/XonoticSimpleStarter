@@ -1,0 +1,68 @@
+#:kivy 1.8.0
+
+# XonoticSimpleStarter
+# Copyright (C) <2016>  <Sebastian Schmidt>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+<Widget>:
+    font_name: "xolonium"
+
+
+<Popup>:
+    title_font: "xolonium"
+
+
+<Button>:
+    background_normal: "themes/luma/button_f.tga"
+    background_down: "themes/luma/button_c.tga"
+    background_disabled_normal: "themes/luma/buttongray_f.tga"
+    background_disabled_down: "themes/luma/buttongray_c.tga"
+    border: [0, 64, 0, 64]
+
+
+<ActionItem>:
+    background_normal: "atlas://data/images/defaulttheme/action_item"
+    background_down: "atlas://data/images/defaulttheme/action_item_down"
+    border: [8, 8, 8, 8]
+
+
+<ActionPreviousButton>:
+    background_normal: "atlas://data/images/defaulttheme/action_item"
+    background_down: "atlas://data/images/defaulttheme/action_item_down"
+    border: [8, 8, 8, 8]
+
+
+<TextInput>:
+    foreground_color: [1., 1., 1., 1.]
+    padding: [24, 6, 24, 6]
+    background_normal: "themes/luma/inputbox_n.tga"
+    background_active: "themes/luma/inputbox_f.tga"
+    background_disabled_normal: "themes/luma/inputboxgray_n.tga"
+    background_disabled_active: "themes/luma/inputboxgray_f.tga"
+    border: [0, 64, 0, 64]
+
+
+<TabbedPanel>:
+    tab_width: 128
+
+
+<TreeViewNode>:
+    color_selected: [0.9, 0.5, 0., 1.]
+
+
+<CheckBox>:
+    background_checkbox_normal: "themes/luma/checkbox_f0.tga"
+    background_checkbox_down: "themes/luma/checkbox_f1.tga"

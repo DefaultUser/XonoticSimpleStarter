@@ -10,8 +10,10 @@ twisted<br/>
 
 COPYRIGHT
 ---------
-GPLv3, see LICENSE<br/>
-Kivy and Twisted are licensed under MIT license (see kivy.org and twistedmatrix.com)
+GPLv3, see "GPL-3"<br/>
+Kivy and Twisted are licensed under MIT license (see https://kivy.org and http://twistedmatrix.com)<br/>
+The supplied themes including the used images are based on Xonotic (http://xonotic.org) which is licensed under GPL license<br/>
+The Xolonium Font by Severin Meyer is licensed under OFL and can be found at https://gitlab.com/sev/xolonium or https://fontlibrary.org/en/font/xolonium (see "LICENSE-Xolonium")
 
 Sebastian Schmidt<br/>
 schro.sb@gmail.com

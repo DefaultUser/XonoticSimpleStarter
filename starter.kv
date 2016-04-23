@@ -31,8 +31,6 @@
 
 <TextInput>:
     write_tab: False
-    foreground_color: [1., 1., 1., 1.]
-    background_color: [0.4, 0.4, 0.4, 1.]
 
 
 <IRCRulesPopup>:
@@ -40,7 +38,7 @@
     BoxLayout:
         orientation: 'vertical'
         Label:
-            font_size: 25
+            font_size: 20
             line_height: 2
             markup: True
             text: root.ircrules
@@ -77,6 +75,7 @@
         Widget:
             size_hint_y: 0.3
         BoxLayout:
+            size_hint_y: 0.2
             Button:
                 id: add_fav_btn
                 text: "Add Favourite"
@@ -99,31 +98,41 @@
             on_press: starter_widget.request_info()
     BoxLayout:
         orientation: 'horizontal'
-        size_hint_y: 0.1
+        size_hint_y: None
+        height: txt_input_filter.height
         Label:
             text: "Filter"
+            size_hint_x: 0.08
         TextInput:
             id: txt_input_filter
+            size_hint_x: 0.19
+            size_hint_y: None
             multiline: False
             height: self.minimum_height
             on_text: root.update_serverlist()
         Label:
             text: "Sort by:"
+            size_hint_x: 0.1
         Spinner:
             id: spinner_sort
+            size_hint_x: 0.25
             text: "Name"
             values: ["Name", "Current Players", "Maximum Players", "Gametype"]
             on_text: root.sort_by(self.text)
         Label:
             text: "Show empty"
-        Switch:
+            size_hint_x: 0.13
+        CheckBox:
             id: switch_empty
+            size_hint_x: 0.075
             active: True
             on_active: root.update_serverlist()
         Label:
             text: "Show full"
-        Switch:
+            size_hint_x: 0.1
+        CheckBox:
             id: switch_full
+            size_hint_x: 0.075
             active: True
             on_active: root.update_serverlist()
     ScrollView:
