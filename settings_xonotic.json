@@ -1,6 +1,6 @@
 [
  {
-     "type": "path",
+     "type": "winPath",
      "title": "Xonotic application",
      "desc": "Full path to the Xonotic application (NOT THE APPLICATION ITSELF!)",
      "section": "Xonotic",

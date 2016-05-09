@@ -27,7 +27,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.treeview import TreeViewLabel
 from kivy.core.text import LabelBase
 
-from basewidgets import TreeViewContainerNode
+from basewidgets import TreeViewContainerNode, WinSettingPath
 
 install_twisted_reactor()
 
@@ -411,7 +411,7 @@ class StarterApp(App):
 
     def build_config(self, config):
         config.setdefaults('Xonotic', {
-            'xon_path': "/",
+            'xon_path': script_dir(),
             'env_vars': "",
             'xon_version': "sdl",
             'args': ""})
@@ -422,6 +422,7 @@ class StarterApp(App):
             'autojoin': False})
 
     def build_settings(self, settings):
+        settings.register_type('winPath', WinSettingPath)
         settings.add_json_panel('Xonotic', self.config,
                                 os.path.join(script_dir(),
                                              'settings_xonotic.json'))
