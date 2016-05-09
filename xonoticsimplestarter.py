@@ -398,7 +398,7 @@ class StarterApp(App):
             args.extend(["+connect", server])
 
         try:
-            subprocess.Popen(args, env=myenv)
+            subprocess.Popen(args, cwd=xon_path, env=myenv)
         except OSError as e:
             content = BoxLayout(orientation='vertical')
             content.add_widget(Label(text="An error occured: " + e.strerror))
