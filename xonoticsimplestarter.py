@@ -83,7 +83,6 @@ class StarterWidget(BoxLayout):
     masterserver = "dpmaster.deathmask.net"
     options = "/?game=xonotic&?&xml=1&?&showplayers=1"
     request_url = "http://" + masterserver + options
-    serverstring = "{name} - {gametype}({mod}) - {numplayers}/{maxplayers}"
 
     def __init__(self, *args, **kwargs):
         self.servers = {}
@@ -299,7 +298,6 @@ class StarterWidget(BoxLayout):
             if (not self.ids.switch_full.active and
                     server['numplayers'] == server['maxplayers']):
                 continue
-            display_str = self.serverstring.format(**server)
             if server['mod'] in ('Xonotic', 'Xpm'):
                 parent = self.servertype_nodes['vanilla']
             elif server['mod'] == 'Instagib':
