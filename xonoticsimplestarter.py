@@ -376,7 +376,13 @@ class StarterApp(App):
         # Path and Version like specified in the settings
         xon_path = self.config.get('Xonotic', 'xon_path')
         xon_version = self.config.get('Xonotic', 'xon_version')
-        if sys.platform.startswith('linux'):
+        # git version
+        if os.path.isfile(os.path.join(xon_path, "all")):
+            xon_app = "all"
+            args.insert(0, "run")
+            args.insert(1, xon_version)
+        # release and autobuild versions
+        elif sys.platform.startswith('linux'):
             xon_app = "xonotic-linux-{}.sh".format(xon_version)
         elif sys.platform in ["win32", "cygwin"]:
             if xon_version == "sdl":
