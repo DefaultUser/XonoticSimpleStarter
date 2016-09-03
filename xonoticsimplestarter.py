@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.support import install_twisted_reactor
@@ -92,10 +94,10 @@ class StarterWidget(BoxLayout):
 
     def add_favourite(self, name, address):
         if not (name and address):
-            print "Input is wrong"
+            print("Input is wrong")
             return False
         if ":" not in address:
-            print "Please specify the server by ip:port or domain:port"
+            print("Please specify the server by ip:port or domain:port")
             return False
         app = App.get_running_app()
         if not app.config.has_section('Favourites'):
@@ -116,8 +118,11 @@ class StarterWidget(BoxLayout):
         address = self.popup.ids.txt_inpt_address.text.strip()
         if self.add_favourite(name, address):
             self.popup.dismiss()
-            addr, port = address.split(":")
-            self.request_serverinfo(addr, port)
+            if ":" in address:
+                addr, port = address.split(":")
+                self.request_serverinfo(addr, port)
+            else:
+                self.request_serverinfo(address)
 
     def add_server_to_favourites(self):
         if self.ids.server_list.selected_node:
@@ -144,8 +149,13 @@ class StarterWidget(BoxLayout):
         if config.has_section('Favourites'):
             for name in config.options('Favourites'):
                 addr_port = config.get('Favourites', name)
-                address, port = addr_port.split(":")
-                self.request_serverinfo(address, port)
+                # domain name and port or IPv4 and port
+                if ":" in addr_port:
+                    address, port = addr_port.split(":")
+                    self.request_serverinfo(address, port)
+                # domain name or IPv4 without port
+                else:
+                    self.request_serverinfo(addr_port)
                 self.fav_servers[addr_port] = {'name': name,
                                                'status': 'DOWN',
                                                'numplayers': 0,
@@ -161,7 +171,7 @@ class StarterWidget(BoxLayout):
         getPage(self.request_url, timeout=5).addCallback(
             self.on_serverlist_retrieved)
 
-    def request_serverinfo(self, address, port):
+    def request_serverinfo(self, address, port=26000):
         """
         Request info about a specific server from dpmaster.deathmask.net
         """
@@ -180,7 +190,7 @@ class StarterWidget(BoxLayout):
         for server in root:
             address, serverdict = self.dictify_server(server)
             if serverdict['type'] == 'MASTERSERVER':
-                print "Number of servers: ", serverdict['numservers']
+                print("Number of servers: ", serverdict['numservers'])
             else:
                 self.servers[address] = serverdict
         # sort the list
@@ -393,7 +403,7 @@ class StarterApp(App):
         elif sys.platform == "darwin":
             xon_app = "Xonotic.app"
         else:
-            print "Unsupported platform"
+            print("Unsupported platform")
             return
 
         args.insert(0, os.path.join(xon_path, xon_app))

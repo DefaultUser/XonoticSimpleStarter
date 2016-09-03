@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+
 from collections import OrderedDict
 
 from kivy.app import App
@@ -40,7 +42,7 @@ def colored(text, color):
                           ("lightblue", "0000fc"), ("pink", "ff00ff"),
                           ("grey", "7f7f7f"), ("lightgrey", "d2d2d2")])
     if color not in colors:
-        print "Color ", color, " is not available"
+        print("Color ", color, " is not available")
         return text
     return "[color={}]{}[/color]".format(colors[color], text)
 
@@ -302,7 +304,7 @@ class IRCClient(irc.IRCClient):
         service = "Q@CServe.quakenet.org"
         command = "AUTH"
         if username and password:
-            print "Authenticating..."
+            print("Authenticating...")
             self.msg(service, "{} {} {}".format(command, username, password))
             self.mode(self.nickname, True, "x")
 
@@ -314,13 +316,13 @@ class IRCClient(irc.IRCClient):
             self.join("#xonotic.pickup")
 
     def joined(self, channel):
-        print "Joined ", channel
+        print("Joined ", channel)
         self.joined_channels.append(channel)
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.on_joined()
 
     def left(self, channel):
-        print "Left", channel
+        print("Left ", channel)
         self.joined_channels.remove(channel)
         # remove the channel from the _userlist
         # use a default value in case the NAMRPLY was not received before
@@ -329,7 +331,7 @@ class IRCClient(irc.IRCClient):
         irc_view.on_left()
 
     def kickedFrom(self, channel, kicker, msg):
-        print "Kicked from ", channel, "by ", kicker
+        print("Kicked from ", channel, "by ", kicker)
         self.joined_channels.remove(channel)
         # remove the channel from the _userlist
         # use a default value in case the NAMRPLY was not received before
@@ -338,8 +340,9 @@ class IRCClient(irc.IRCClient):
         irc_view.on_kicked(msg)
 
     def privmsg(self, user, channel, msg):
+        # TODO: show private messages, not only channel messages
         if channel not in self.joined_channels:
-            print "Message from ", channel, "(", user, "): ", msg
+            print("Message from ", channel, "(", user, "): ", msg)
             return
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.append_msg(user.split("!")[0], msg)
@@ -354,8 +357,8 @@ class IRCClient(irc.IRCClient):
 
     def userLeft(self, user, channel):
         if channel not in self.joined_channels:
-            print "Got userLeft message from a channel you have not joined"
-            print "This should never happen"
+            print("Got userLeft message from a channel you have not joined")
+            print("This should never happen")
             return
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.on_userLeft(user)
@@ -378,7 +381,7 @@ class IRCClient(irc.IRCClient):
 
     def action(self, user, channel, data):
         if channel not in self.joined_channels:
-            print "Action in ", channel, " ", user, " ", data
+            print("Action in ", channel, " ", user, " ", data)
             return
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.append_action(user.split("!")[0], data)
@@ -402,8 +405,8 @@ class IRCClient(irc.IRCClient):
 
     def topicUpdated(self, user, channel, newTopic):
         if channel not in self.joined_channels:
-            print "Got topic for a channel you have not joined"
-            print "This should never happen"
+            print("Got topic for a channel you have not joined")
+            print("This should never happen")
             return
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.topicUpdated(newTopic)
@@ -416,7 +419,7 @@ class IRCClient(irc.IRCClient):
         channel = params[2]
         users = params[3].split()
         if channel not in self.joined_channels:
-            print "Received user list for channel: ", channel, ", ignoring it"
+            print("Received user list for channel: ", channel, ", ignoring it")
             return
         if channel not in self._userlist:
             self._userlist[channel] = users
@@ -426,7 +429,7 @@ class IRCClient(irc.IRCClient):
     def irc_RPL_ENDOFNAMES(self, prefix, params):
         channel = params[1]
         if channel not in self.joined_channels:
-            print "Received user list for channel: ", channel, ", ignoring it"
+            print("Received user list for channel: ", channel, ", ignoring it")
             return
         irc_view = self.factory.controller.get_irc_widget(channel)
         irc_view.set_userlist_from_NAMES(self._userlist[channel])
@@ -444,11 +447,11 @@ class IRCFactory(protocol.ClientFactory):
 
     def clientConnectionLost(self, connector, reason):
         self.controller.is_connected = False
-        print "connection lost ", reason
+        print("connection lost ", reason)
 
     def clientConnectionFailed(self, connector, reason):
         self.controller.is_connected = False
-        print "connection failed ", reason
+        print("connection failed ", reason)
 
 
 class IRCController(EventDispatcher):
