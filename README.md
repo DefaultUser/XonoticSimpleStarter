@@ -7,6 +7,7 @@ Dependencies
 python2<br/>
 kivy (1.8.0 or higher)<br/>
 twisted<br/>
+treq<br/>
 
 COPYRIGHT
 ---------
