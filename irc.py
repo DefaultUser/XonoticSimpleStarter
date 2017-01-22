@@ -17,6 +17,7 @@
 from __future__ import print_function
 
 from collections import OrderedDict
+import re
 
 from kivy.app import App
 from kivy.event import EventDispatcher
@@ -31,16 +32,19 @@ from twisted.words.protocols import irc
 
 Builder.load_file("ircchannelview.kv")
 
+colors = OrderedDict([("white", "ffffff"), ("black", "000000"),
+                      ("blue", "00007f"), ("green", "009300"),
+                      ("red", "ff0000"), ("brown", "7f0000"),
+                      ("purple", "9c009c"), ("orange", "fc7f00"),
+                      ("yellow", "ffff00"), ("lightgreen", "00fc00"),
+                      ("cyan", "009393"), ("lightcyan", "00ffff"),
+                      ("lightblue", "0000fc"), ("pink", "ff00ff"),
+                      ("grey", "7f7f7f"), ("lightgrey", "d2d2d2")])
+
+color_pattern = re.compile("(\x03)(\\d{1,2}(,\\d{1,2})?)?")
+
 
 def colored(text, color):
-    colors = OrderedDict([("white", "ffffff"), ("black", "000000"),
-                          ("blue", "00007f"), ("green", "009300"),
-                          ("red", "ff0000"), ("brown", "7f0000"),
-                          ("purple", "9c009c"), ("orange", "fc7f00"),
-                          ("yellow", "ffff00"), ("lightgreen", "00fc00"),
-                          ("cyan", "009393"), ("lightcyan", "00ffff"),
-                          ("lightblue", "0000fc"), ("pink", "ff00ff"),
-                          ("grey", "7f7f7f"), ("lightgrey", "d2d2d2")])
     if color not in colors:
         print("Color ", color, " is not available")
         return text
@@ -55,12 +59,48 @@ def italic(text):
     return "[i]{}[/i]".format(text)
 
 
+def formatting_from_irc(text):
+    substrings = text.split("\x0f")
+    formatted = ""
+    for substring in substrings:
+        # remove underline as it's not supported unless sdl2 is used
+        s = substring.replace("\x1f", "")
+        # bold
+        splitted = s.split("\x02")
+        s = splitted[0]
+        for i, a in enumerate(splitted[1:]):
+            control = "[b]" if i % 2 == 0 else "[/b]"
+            s += control + a
+        if len(splitted) % 2 == 0:
+            s += "[/b]"
+        # italic
+        splitted = s.split("\x1d")
+        s = splitted[0]
+        for i, a in enumerate(splitted[1:]):
+            control = "[i]" if i % 2 == 0 else "[/i]"
+            s += control + a
+        if len(splitted) % 2 == 0:
+            s += "[/i]"
+        # color
+        # remove background color as it's not supported by kivy
+        splitted = color_pattern.split(s)
+        s = splitted[0]
+        for i in range(1, len(splitted), 4):
+            if not splitted[i+1]:
+                s += "[/color]"
+            else:
+                color = int(splitted[i+1].split(",")[0])
+                s += "[color={}]".format(colors.values()[color])
+            s += splitted[i+3]
+        formatted += s
+    return formatted
+
+
 class IRCChannelView(BoxLayout):
     channel = StringProperty("")
 
     def topicUpdated(self, newTopic):
-        # TODO: Color and format information
-        self.ids.txt_topic.text = newTopic
+        self.ids.txt_topic.text = formatting_from_irc(newTopic)
 
     def append_line(self, line):
         self.ids.txt_display.text += line + "\n"
@@ -69,8 +109,7 @@ class IRCChannelView(BoxLayout):
         """
         Append a message to the IRC chat
         """
-        # TODO: Color and format information
-        self.append_line("{:>20} {}".format(user, msg))
+        self.append_line("{:>20} {}".format(user, formatting_from_irc(msg)))
 
     def append_action(self, user, data):
         self.append_line(colored(italic("{:>20} {}".format(user, data))),
