@@ -34,7 +34,8 @@ from basewidgets import TreeViewContainerNode, WinSettingPath
 install_twisted_reactor()
 
 from xml.etree import cElementTree as ElementTree
-from twisted.web.client import getPage
+from twisted.internet import defer
+from treq import get
 
 import subprocess
 import os
@@ -164,50 +165,51 @@ class StarterWidget(BoxLayout):
                                                'mod': "??",
                                                'version': ""}
 
+    @defer.inlineCallbacks
     def request_serverlist(self):
         """
         Request a list of currently public servers from dpmaster.deathmask.net
         """
-        getPage(self.request_url, timeout=5).addCallback(
-            self.on_serverlist_retrieved)
+        try:
+            response = yield get(self.request_url, timeout=5)
+        except defer.TimeoutError:
+            pass
+        else:
+            xmlstring = yield response.content()
+            tree = ElementTree.ElementTree(ElementTree.fromstring(xmlstring))
+            root = tree.getroot()
 
+            self.servers = OrderedDict()
+            # iterate
+            for server in root:
+                address, serverdict = self.dictify_server(server)
+                if serverdict['type'] == 'MASTERSERVER':
+                    print("Number of servers: ", serverdict['numservers'])
+                else:
+                    self.servers[address] = serverdict
+            # sort the list
+            self.sort_by(self.ids.spinner_sort.text)
+
+    @defer.inlineCallbacks
     def request_serverinfo(self, address, port=26000):
         """
         Request info about a specific server from dpmaster.deathmask.net
         """
         url = self.request_url + "&server={}:{}".format(address, port)
-        getPage(url, timeout=5).addCallback(self.on_serverinfo_retrieved)
-
-    def on_serverlist_retrieved(self, xmlstring):
-        """
-        Process the serverlist from dpmaster.deathmask.net
-        """
-        tree = ElementTree.ElementTree(ElementTree.fromstring(xmlstring))
-        root = tree.getroot()
-
-        self.servers = OrderedDict()
-        # iterate
-        for server in root:
+        try:
+            response = yield get(url, timeout=5)
+        except defer.TimeoutError:
+            pass
+        else:
+            xmlstring = yield response.content()
+            tree = ElementTree.ElementTree(ElementTree.fromstring(xmlstring))
+            root = tree.getroot()
+            server = root[0]
             address, serverdict = self.dictify_server(server)
-            if serverdict['type'] == 'MASTERSERVER':
-                print("Number of servers: ", serverdict['numservers'])
-            else:
-                self.servers[address] = serverdict
-        # sort the list
-        self.sort_by(self.ids.spinner_sort.text)
-
-    def on_serverinfo_retrieved(self, xmlstring):
-        """
-        Process the info of a favourite server
-        """
-        tree = ElementTree.ElementTree(ElementTree.fromstring(xmlstring))
-        root = tree.getroot()
-        server = root[0]
-        address, serverdict = self.dictify_server(server)
-        if serverdict['status'] == 'UP':
-            self.fav_servers[address] = serverdict
-            self.sort_favourites()
-        self.update_serverlist()
+            if serverdict['status'] == 'UP':
+                self.fav_servers[address] = serverdict
+                self.sort_favourites()
+            self.update_serverlist()
 
     def dictify_server(self, server):
         """
@@ -227,12 +229,19 @@ class StarterWidget(BoxLayout):
                 for field in ['numplayers', 'maxplayers']:
                     serverdict[field] = int(server.find(field).text)
                 # gametype, mod etc
+                serverdict['gametype'] = "??"
+                serverdict['version'] = "??"
+                serverdict['mod'] = "??"
                 for rule in server.findall('rules/rule'):
                     if rule.attrib['name'] == "qcstatus":
                         rules = rule.text.split(":")
-                        serverdict['gametype'] = rules[0]
-                        serverdict['version'] = rules[1]
-                        serverdict['mod'] = rules[5][1:].capitalize()
+                        try:
+                            serverdict['gametype'] = rules[0]
+                            serverdict['version'] = rules[1]
+                            serverdict['mod'] = rules[5][1:].capitalize()
+                        except IndexError:
+                            # Some servers do not properly report qcstatus
+                            pass
         return server.attrib['address'], serverdict
 
     def sort_by(self, text):
