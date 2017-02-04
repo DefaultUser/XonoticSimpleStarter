@@ -90,8 +90,20 @@ class StarterWidget(BoxLayout):
     def __init__(self, *args, **kwargs):
         self.servers = {}
         self.fav_servers = {}
+        self.check_blocked_IPs()
         self.request_info()
         return super(StarterWidget, self).__init__(*args, **kwargs)
+
+    def check_blocked_IPs(self):
+        self.blocked_IPs = set()
+        xon_path = App.get_running_app().config.get('Xonotic', 'xon_path')
+        filepath = os.path.join(xon_path, "misc", "infrastructure",
+                                "checkupdate.txt")
+        if os.path.isfile(filepath):
+            with open(filepath) as f:
+                for line in f.readlines():
+                    if line.startswith("B"):
+                        self.blocked_IPs.add(line[1:].strip())
 
     def add_favourite(self, name, address):
         if not (name and address):
@@ -185,6 +197,8 @@ class StarterWidget(BoxLayout):
                 address, serverdict = self.dictify_server(server)
                 if serverdict['type'] == 'MASTERSERVER':
                     print("Number of servers: ", serverdict['numservers'])
+                elif serverdict['type'] == 'BLOCKED':
+                    print("Blocked server: {}".format(address))
                 else:
                     self.servers[address] = serverdict
             # sort the list
@@ -219,6 +233,9 @@ class StarterWidget(BoxLayout):
         if server.attrib['address'] == self.masterserver:
             serverdict['type'] = 'MASTERSERVER'
             serverdict['numservers'] = server.attrib['servers']
+        elif any([server.attrib['address'].startswith(ip) for ip in
+                  self.blocked_IPs]):
+            serverdict['type'] = 'BLOCKED'
         else:
             # basic info
             serverdict['status'] = server.attrib['status']
