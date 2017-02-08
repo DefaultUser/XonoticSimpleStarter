@@ -16,10 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
-
 from kivy.app import App
 from kivy.lang import Builder
+from kivy.logger import Logger
 from kivy.support import install_twisted_reactor
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
@@ -106,11 +105,9 @@ class StarterWidget(BoxLayout):
                         self.blocked_IPs.add(line[1:].strip())
 
     def add_favourite(self, name, address):
-        if not (name and address):
-            print("Input is wrong")
-            return False
-        if ":" not in address:
-            print("Please specify the server by ip:port or domain:port")
+        if not (name and address) or ":" not in address:
+            Logger.debug("Input for 'add_favourite' is wrong: name: {},"
+                         " address: {}".format(name, address))
             return False
         app = App.get_running_app()
         if not app.config.has_section('Favourites'):
@@ -185,7 +182,7 @@ class StarterWidget(BoxLayout):
         try:
             response = yield get(self.request_url, timeout=5)
         except Exception as e:
-            print("Requesting serverlist timed out: {}".format(e))
+            Logger.debug("Requesting serverlist timed out: {}".format(e))
             reactor.callLater(5, self.request_serverlist)
         else:
             xmlstring = yield response.content()
@@ -197,9 +194,10 @@ class StarterWidget(BoxLayout):
             for server in root:
                 address, serverdict = self.dictify_server(server)
                 if serverdict['type'] == 'MASTERSERVER':
-                    print("Number of servers: ", serverdict['numservers'])
+                    Logger.debug("Number of servers: ",
+                                 serverdict['numservers'])
                 elif serverdict['type'] == 'BLOCKED':
-                    print("Blocked server: {}".format(address))
+                    Logger.debug("Blocked server: {}".format(address))
                 else:
                     self.servers[address] = serverdict
             # sort the list
@@ -214,8 +212,8 @@ class StarterWidget(BoxLayout):
         try:
             response = yield get(url, timeout=5)
         except Exception as e:
-            print("Requesting serverinfo for server {}:{}"
-                  " timed out: {}".format(address, port, e))
+            Logger.debug("Requesting serverinfo for server {}:{} "
+                         "timed out: {}".format(address, port, e))
             reactor.callLater(5, self.request_serverinfo, address, port)
         else:
             xmlstring = yield response.content()
@@ -432,7 +430,7 @@ class StarterApp(App):
         elif sys.platform == "darwin":
             xon_app = "Xonotic.app"
         else:
-            print("Unsupported platform")
+            Logger.error("Unsupported platform")
             return
 
         args.insert(0, os.path.join(xon_path, xon_app))
