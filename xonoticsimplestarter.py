@@ -34,7 +34,7 @@ from basewidgets import TreeViewContainerNode, WinSettingPath
 install_twisted_reactor()
 
 from xml.etree import cElementTree as ElementTree
-from twisted.internet import defer
+from twisted.internet import defer, error, reactor
 from treq import get
 
 import subprocess
@@ -184,8 +184,9 @@ class StarterWidget(BoxLayout):
         """
         try:
             response = yield get(self.request_url, timeout=5)
-        except defer.TimeoutError:
-            pass
+        except Exception as e:
+            print("Requesting serverlist timed out: {}".format(e))
+            reactor.callLater(5, self.request_serverlist)
         else:
             xmlstring = yield response.content()
             tree = ElementTree.ElementTree(ElementTree.fromstring(xmlstring))
@@ -212,8 +213,10 @@ class StarterWidget(BoxLayout):
         url = self.request_url + "&server={}:{}".format(address, port)
         try:
             response = yield get(url, timeout=5)
-        except defer.TimeoutError:
-            pass
+        except Exception as e:
+            print("Requesting serverinfo for server {}:{}"
+                  " timed out: {}".format(address, port, e))
+            reactor.callLater(5, self.request_serverinfo, address, port)
         else:
             xmlstring = yield response.content()
             tree = ElementTree.ElementTree(ElementTree.fromstring(xmlstring))
