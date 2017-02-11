@@ -85,6 +85,8 @@ class StarterWidget(BoxLayout):
     masterserver = "dpmaster.deathmask.net"
     options = "/?game=xonotic&?&xml=1&?&showplayers=1"
     request_url = "http://" + masterserver + options
+    TIMEOUT = 10
+    RETRY_DELAY = 30
 
     def __init__(self, *args, **kwargs):
         self.servers = {}
@@ -180,10 +182,12 @@ class StarterWidget(BoxLayout):
         Request a list of currently public servers from dpmaster.deathmask.net
         """
         try:
-            response = yield get(self.request_url, timeout=5)
+            response = yield get(StarterWidget.request_url,
+                                 timeout=StarterWidget.TIMEOUT)
         except Exception as e:
             Logger.debug("Requesting serverlist timed out: {}".format(e))
-            reactor.callLater(5, self.request_serverlist)
+            reactor.callLater(StarterWidget.RETRY_DELAY,
+                              self.request_serverlist)
         else:
             xmlstring = yield response.content()
             tree = ElementTree.ElementTree(ElementTree.fromstring(xmlstring))
@@ -208,13 +212,14 @@ class StarterWidget(BoxLayout):
         """
         Request info about a specific server from dpmaster.deathmask.net
         """
-        url = self.request_url + "&server={}:{}".format(address, port)
+        url = StarterWidget.request_url + "&server={}:{}".format(address, port)
         try:
-            response = yield get(url, timeout=5)
+            response = yield get(url, timeout=StarterWidget.TIMEOUT)
         except Exception as e:
             Logger.debug("Requesting serverinfo for server {}:{} "
                          "timed out: {}".format(address, port, e))
-            reactor.callLater(5, self.request_serverinfo, address, port)
+            reactor.callLater(StarterWidget.RETRY_DELAY,
+                              self.request_serverinfo, address, port)
         else:
             xmlstring = yield response.content()
             tree = ElementTree.ElementTree(ElementTree.fromstring(xmlstring))
@@ -231,7 +236,7 @@ class StarterWidget(BoxLayout):
         Turn the xml Element 'server' into a dictionary
         """
         serverdict = {}
-        if server.attrib['address'] == self.masterserver:
+        if server.attrib['address'] == StarterWidget.masterserver:
             serverdict['type'] = 'MASTERSERVER'
             serverdict['numservers'] = server.attrib['servers']
         elif any([server.attrib['address'].startswith(ip) for ip in
