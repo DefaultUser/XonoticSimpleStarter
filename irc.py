@@ -519,7 +519,8 @@ class IRCController(EventDispatcher):
         if self.is_connected:
             return
         self.ircfactory = IRCFactory(self)
-        self.connector = reactor.connectTCP(self.server, self.port,
+        self.connector = reactor.connectTCP(IRCController.server,
+                                            IRCController.port,
                                             self.ircfactory)
 
     def disconnect(self):
