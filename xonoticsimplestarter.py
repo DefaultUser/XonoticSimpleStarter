@@ -196,14 +196,20 @@ class StarterWidget(BoxLayout):
             self.servers = OrderedDict()
             # iterate
             for server in root:
-                address, serverdict = self.dictify_server(server)
-                if serverdict['type'] == 'MASTERSERVER':
-                    Logger.debug("Number of servers: ",
-                                 serverdict['numservers'])
-                elif serverdict['type'] == 'BLOCKED':
-                    Logger.debug("Blocked server: {}".format(address))
-                else:
-                    self.servers[address] = serverdict
+                try:
+                    address, serverdict = self.dictify_server(server)
+                    if serverdict['type'] == 'MASTERSERVER':
+                        Logger.debug("Number of servers: {}".format(
+                                    serverdict['numservers']))
+                    elif serverdict['type'] == 'BLOCKED':
+                        Logger.debug("Blocked server: {}".format(address))
+                    else:
+                        self.servers[address] = serverdict
+                except Exception as e:
+                    Logger.error("Exception caught while parsing server with "
+                                 "address {}: {!r}".format(
+                                     server.attrib["address"], e))
+                    continue
             # sort the list
             self.sort_by(self.ids.spinner_sort.text)
 
