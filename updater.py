@@ -251,7 +251,6 @@ class UpdatePane(BoxLayout):
 
     @defer.inlineCallbacks
     def do_update(self):
-        self.updateRunning = True
         config = App.get_running_app().config
         xon_path = config.get('Xonotic', 'xon_path')
         if hasattr(self, "process"):
@@ -262,6 +261,7 @@ class UpdatePane(BoxLayout):
                              "Please use the all script")
             defer.returnValue(None)
         try:
+            self.updateRunning = True
             yield self.prepare_update(xon_path)
             self.ids["output"].text = "Starting update...\n"
         except EnvironmentError as e:
