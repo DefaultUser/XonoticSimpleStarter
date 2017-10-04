@@ -42,6 +42,7 @@ import sys
 from collections import OrderedDict
 
 import irc
+import util
 
 
 def script_dir():
@@ -404,6 +405,7 @@ class StarterApp(App):
     def on_stop(self):
         # Disconnect from IRC if window is destroyed
         self.irccontroller.disconnect()
+        self.root.ids["update_pane"].cancel()
 
     def start_xon(self, server=None):
         """
@@ -425,7 +427,7 @@ class StarterApp(App):
         xon_path = self.config.get('Xonotic', 'xon_path')
         xon_version = self.config.get('Xonotic', 'xon_version')
         # git version
-        if os.path.isfile(os.path.join(xon_path, "all")):
+        if util.is_git_version(xon_path):
             xon_app = "all"
             args.insert(0, "run")
             args.insert(1, xon_version)
@@ -452,18 +454,11 @@ class StarterApp(App):
         try:
             subprocess.Popen(args, cwd=xon_path, env=myenv)
         except OSError as e:
-            content = BoxLayout(orientation='vertical')
-            content.add_widget(Label(text="An error occured: " + e.strerror))
-            close_btn = Button(text="Close Popup")
-            close_btn.size_hint_y = 0.1
-            content.add_widget(close_btn)
-            popup = Popup(title="Error", content=content)
-            close_btn.bind(on_press=popup.dismiss)
-            popup.open()
+            util.error_popup("An error occured: " + e.strerror)
 
     def build_config(self, config):
         config.setdefaults('Xonotic', {
-            'xon_path': script_dir(),
+            'xon_path': os.path.join(script_dir(), "Xonotic"),
             'env_vars': "",
             'xon_version': "sdl",
             'args': ""})
@@ -472,6 +467,11 @@ class StarterApp(App):
             'username': "",
             'password': "",
             'autojoin': False})
+        config.setdefaults('Update', {
+            'autobuild': False,
+            'INCLUDE_ALL': False,
+            'INCLUDE_32BIT': False,
+            'quality': "normal"})
 
     def build_settings(self, settings):
         settings.register_type('winPath', WinSettingPath)
@@ -481,6 +481,9 @@ class StarterApp(App):
         settings.add_json_panel('IRC', self.config,
                                 os.path.join(script_dir(),
                                              'settings_irc.json'))
+        settings.add_json_panel('Update', self.config,
+                                os.path.join(script_dir(),
+                                             'settings_update.json'))
 
     def build(self):
         self.icon = os.path.join(self.config.get('Xonotic', 'xon_path'),

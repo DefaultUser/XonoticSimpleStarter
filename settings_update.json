@@ -1,0 +1,31 @@
+[
+ {
+     "type": "bool",
+     "title": "Update to autobuild",
+     "desc": "Use the latest autobuild instead of the latest release",
+     "section": "Update",
+     "key": "autobuild"
+ },
+ {
+     "type": "bool",
+     "title": "Include all files",
+     "desc": "Download files for other OSs and Bitness",
+     "section": "Update",
+     "key": "INCLUDE_ALL"
+ },
+ {
+     "type": "bool",
+     "title": "Include 32Bit files",
+     "desc": "Download 32Bit files on 64Bit Systems",
+     "section": "Update",
+     "key": "INCLUDE_32BIT"
+ },
+ {
+     "type": "options",
+     "title": "Quality",
+     "desc": "NOTE: high will greatly increase the loading times",
+     "section": "Update",
+     "key": "quality",
+     "options": ["low", "normal", "high"]
+ }
+]

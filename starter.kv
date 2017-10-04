@@ -20,6 +20,7 @@
 #:import ListItemButton kivy.uix.listview.ListItemButton
 
 #:import IRCChannelView irc.IRCChannelView
+#:import UpdatePane updater.UpdatePane
 
 #:import subprocess subprocess
 #:import webbrowser webbrowser
@@ -185,6 +186,7 @@
         # Serverlist
         TabbedPanelItem:
             text: "Start"
+            disabled: update_pane.updateRunning
             StarterWidget
 
         # Support IRC
@@ -200,3 +202,9 @@
             IRCChannelView:
                 id: irc_pickup
                 channel: "#xonotic.pickup"
+
+        # Updater Pane
+        TabbedPanelItem:
+            text: "Update"
+            UpdatePane:
+                id: update_pane
