@@ -290,7 +290,7 @@ class UpdatePane(BoxLayout):
             if not INCLUDE_ALL:
                 args += excludes_windows
                 if util.win_is_32bit():
-                    args += excludes_linux32
+                    args += excludes_windows32
                 elif not INCLUDE_32BIT:
                     args += excludes_windows64
         elif platform.system() == "Darwin":
