@@ -56,13 +56,6 @@ excludes_darwin = ["--exclude=/xonotic-linux*",
 excludes_linux64 = ["--exclude=/Xonotic*.app",
                     "--exclude=/xonotic-osx-*",
                     "--exclude=/gmqcc/gmqcc.osx"]
-excludes_linux64_no32 = ["--exclude=/xonotic-linux32-*",
-                         "--exclude=/gmqcc/gmqcc.linux32"]
-excludes_linux32 = ["--exclude=/Xonotic*.app",
-                    "--exclude=/xonotic-osx-*",
-                    "--exclude=/gmqcc/gmqcc.osx",
-                    "--exclude=/xonotic-linux64-*",
-                    "--exclude=/gmqcc/gmqcc.linux64"]
 excludes_windows = ["--exclude=/xonotic-linux*",
                     "--exclude=/xonotic-osx-*",
                     "--exclude=/Xonotic*.app",
@@ -300,16 +293,14 @@ class UpdatePane(BoxLayout):
                 args += excludes_posix + excludes_darwin
         else:
             # Linux
+            if platform.machine() == "i386":
+                util.error_popup("32Bit Linux builds are no longer provided, "
+                                 "please build Xonotic yourself")
+                defer.returnValue(None)
             rsync = "rsync"
             args = [rsync, ] + rsync_options
             if not INCLUDE_ALL:
-                args += excludes_posix
-                if platform.machine() == "i386":
-                    args += excludes_linux32
-                else:
-                    args += excludes_linux64
-                    if not INCLUDE_32BIT:
-                        args += excludes_linux64_no32
+                args += excludes_posix + excludes_linux64
         args += [url, xon_path]
         self.process = reactor.spawnProcess(self.update_proto, rsync,
                                             args=args, env=os.environ,
