@@ -84,7 +84,7 @@ class AddFavouritePopup(Popup):
 class StarterWidget(BoxLayout):
     masterserver = "dpmaster.deathmask.net"
     options = "/?game=xonotic&?&xml=1&?&showplayers=1"
-    request_url = "http://" + masterserver + options
+    request_url = "https://" + masterserver + options
     TIMEOUT = 10
     RETRY_DELAY = 30
 
